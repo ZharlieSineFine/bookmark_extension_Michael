@@ -25,7 +25,7 @@ function uploadToWasabi(blob) {
   });
 
   const s3 = new AWS.S3({
-    endpoint: 's3.wasabisys.com', // Wasabi endpoint
+    endpoint: 'https://s3.ap-southeast-1.wasabisys.com', // Wasabi endpoint
     apiVersion: '2006-03-01'
   });
 
