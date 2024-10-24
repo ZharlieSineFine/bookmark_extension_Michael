@@ -1,37 +1,46 @@
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
-    if (request.action === "save_tabs") {
-      try {
-        let tabs = await chrome.tabs.query({ currentWindow: true });
-        let tabUrls = tabs.map(tab => ({ title: tab.title, url: tab.url }));
-        
-        let blob = new Blob([JSON.stringify(tabUrls, null, 2)], { type: 'application/json' });
-        let reader = new FileReader();
+  if (request.action === "save_tabs") {
+    try {
+      let tabs = await chrome.tabs.query({currentWindow: true});
+      let tabUrls = tabs.map(tab => ({title: tab.title, url: tab.url}));
+      let jsonContent = JSON.stringify(tabUrls, null, 2);
+      let blob = new Blob([jsonContent], {type: 'application/json'});
+      
+      // Wasabi upload logic
+      uploadToWasabi(blob);
 
-        reader.onloadend = function() {
-          let now = new Date();
-          let fileName = `tabs_${now.toISOString().replace(/[:.]/g, '-')}.json`;
-          let base64Data = reader.result.split(',')[1];
+    } catch (error) {
+      console.error(error);
+      sendResponse({success: false, error: error.message});
+    }
+    return true; // Keep the message channel open
+  }
+});
 
-          chrome.downloads.download({
-            url: `data:application/json;base64,${base64Data}`,
-            filename: fileName,
-            saveAs: true
-          }, (downloadId) => {
-            if (chrome.runtime.lastError) {
-              console.error(chrome.runtime.lastError.message);
-              sendResponse({ success: false, error: chrome.runtime.lastError.message });
-            } else {
-              console.log(`Download started with ID: ${downloadId}`);
-              sendResponse({ success: true });
-            }
-          });
-        };
+function uploadToWasabi(blob) {
+  AWS.config.update({
+    accessKeyId: 'YOUR_ACCESS_KEY_ID',
+    secretAccessKey: 'YOUR_SECRET_ACCESS_KEY',
+    region: 'us-east-1' // Set to your bucket's region
+  });
 
-        reader.readAsDataURL(blob);
-      } catch (error) {
-        console.error(error);
-        sendResponse({ success: false, error: error.message });
-      }
-      return true; // Keeps the message channel open for sendResponse
+  const s3 = new AWS.S3({
+    endpoint: 's3.wasabisys.com', // Wasabi endpoint
+    apiVersion: '2006-03-01'
+  });
+
+  const params = {
+    Bucket: 'YOUR_BUCKET_NAME',
+    Key: `tabs_${new Date().toISOString().replace(/[:.]/g, '-')}.json`,
+    Body: blob,
+    ACL: 'public-read'
+  };
+
+  s3.upload(params, function(err, data) {
+    if (err) {
+      console.error("Error uploading data: ", err);
+    } else {
+      console.log("Successfully uploaded data to Wasabi", data.Location);
     }
   });
+}
