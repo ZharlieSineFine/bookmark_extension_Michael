@@ -19,9 +19,9 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
 
 function uploadToWasabi(blob) {
   AWS.config.update({
-    accessKeyId: 'YOUR_ACCESS_KEY_ID',
-    secretAccessKey: 'YOUR_SECRET_ACCESS_KEY',
-    region: 'us-east-1' // Set to your bucket's region
+    accessKeyId: 'I9XZE2BRE2VSR72QAZT3',
+    secretAccessKey: '7AgXkmp4YwqQBUpmPna6j0HylhQZV2tYdyWcJy5c',
+    region: 'ap-southeast-1' // Set to your bucket's region
   });
 
   const s3 = new AWS.S3({
